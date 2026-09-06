@@ -67,8 +67,8 @@
     <div id="p3" class="page">
         <h2>📞 Step 2: Spam Call & Message Analyzer</h2>
         <div class="form-group">
-            <label>Paste a suspicious message or phone number:</label>
-            <input type="text" id="sInput" placeholder="e.g., Free lottery, Win cash, urgent OTP">
+            <label>Paste a suspicious message, link, or phone number:</label>
+            <input type="text" id="sInput" placeholder="e.g., Free cash, lottery, http://, 140XXXXXXX, unknown 5 digit number">
         </div>
         <button class="btn" onclick="window.calcSpam()">Analyze for Spam</button>
         <p id="sRes" style="font-weight: bold; margin-top: 15px;"></p>
@@ -155,7 +155,7 @@
         element.style.display = 'inline-block';
         if (v.length < 6) {
             element.textContent = 'Weak 🔴'; element.style.backgroundColor = '#e74c3c'; element.style.color='white'; globalData.pwdStrength = 'Weak';
-        } else if (v.match(/[A-Z]/) && v.match(/[0-9]/)) {
+        } else if (v.match(/[A-Z]/) && v.match(/[0-9]/) && v.match(/[^A-Za-z0-9]/)) {
             element.textContent = 'Strong 🟢'; element.style.backgroundColor = '#2ecc71'; element.style.color='white'; globalData.pwdStrength = 'Strong';
         } else {
             element.textContent = 'Medium 🟡'; element.style.backgroundColor = '#f1c40f'; element.style.color='black'; globalData.pwdStrength = 'Medium';
@@ -163,16 +163,32 @@
     };
 
     window.calcSpam = function() {
-        var txt = document.getElementById('sInput').value.toLowerCase();
+        var txt = document.getElementById('sInput').value.trim().toLowerCase();
         var element = document.getElementById('sRes');
-        if (!txt) { alert('Please enter a message!'); return; }
+        if (!txt) { alert('Please enter a message or number!'); return; }
         globalData.spamData = txt;
-        if (txt.includes('win') || txt.includes('free') || txt.includes('lottery') || txt.includes('otp')) {
-            element.textContent = "🚨 Result: Detected as SPAM / Risk!"; element.style.color = 'var(--danger)';
+        
+        var isSpam = false;
+        var digitsOnly = txt.replace(/[^0-9]/g, "");
+
+        if (txt.includes('win') || txt.includes('free') || txt.includes('lottery') || txt.includes('otp') || txt.includes('cash') || txt.includes('urgent') || txt.includes('http') || txt.includes('.com') || txt.includes('click')) {
+            isSpam = true;
+        } else if (digitsOnly.startsWith('140') || (digitsOnly.length > 0 && digitsOnly.length <= 7) || (digitsOnly.length === 10 && (digitsOnly.startsWith('0') || digitsOnly.startsWith('1')))) {
+            isSpam = true;
+        }
+
+        if (isSpam) {
+            element.textContent = "🚨 Result: Detected as SPAM / Threat Risk!"; element.style.color = 'var(--danger)';
         } else {
             element.textContent = "✅ Result: Looks SAFE to proceed."; element.style.color = 'var(--success)';
         }
     };
+
+    function saveLocalBackup(data) {
+        var currentRecords = JSON.parse(localStorage.getItem('cyber_records')) || [];
+        currentRecords.push(data);
+        localStorage.setItem('cyber_records', JSON.stringify(currentRecords));
+    }
 
     window.finalSubmit = function() {
         var finalScore = 0;
@@ -182,16 +198,18 @@
         });
         globalData.score = finalScore + " / 15";
 
+        saveLocalBackup(globalData);
+
         fetch('/api/records', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(globalData)
         }).then(function(res) {
-            document.getElementById('tMsg').innerHTML = 'Thank you, <strong>' + globalData.name + '</strong>!<br>Data saved to permanent cloud server.<br><strong>Score:</strong> ' + globalData.score;
+            document.getElementById('tMsg').innerHTML = 'Thank you, <strong>' + globalData.name + '</strong>!<br>Data saved permanently to the Cloud DB & Local Backup.<br><strong>Score:</strong> ' + globalData.score;
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
             document.getElementById('p5').classList.add('active');
         }).catch(function(err) {
-            document.getElementById('tMsg').innerHTML = 'Thank you, <strong>' + globalData.name + '</strong>!<br><strong>Score:</strong> ' + globalData.score;
+            document.getElementById('tMsg').innerHTML = 'Thank you, <strong>' + globalData.name + '</strong>!<br>Data backed up locally.<br><strong>Score:</strong> ' + globalData.score;
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
             document.getElementById('p5').classList.add('active');
         });
@@ -202,14 +220,29 @@
         if (pass === ADMIN_PASS) {
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
             document.getElementById('pAdmin').classList.add('active');
-            fetch('/api/records').then(function(r) { return r.json(); }).then(function(records) {
-                var body = document.getElementById('tBody');
-                body.innerHTML = '';
-                records.forEach(function(row) {
-                    body.innerHTML += '<tr><td>'+row.name+'</td><td>'+row.role+'</td><td>'+row.pwdStrength+'</td><td>'+row.spamData+'</td><td>'+row.score+'</td></tr>';
+            
+            var body = document.getElementById('tBody');
+            body.innerHTML = '';
+            
+            var localRecords = JSON.parse(localStorage.getItem('cyber_records')) || [];
+            
+            fetch('/api/records').then(function(r) { return r.json(); }).then(function(cloudRecords) {
+                var displayRecords = cloudRecords && cloudRecords.length > 0 ? cloudRecords : localRecords;
+                if(displayRecords.length === 0) {
+                    body.innerHTML = '<tr><td colspan="5" style="text-align:center;">No records found yet.</td></tr>';
+                    return;
+                }
+                displayRecords.forEach(function(row) {
+                    body.innerHTML += '<tr><td>'+row.name+'</td><td>'+row.role+'</td><td>'+(row.pwdStrength || row.pwd)+'</td><td>'+(row.spamData || row.spam)+'</td><td>'+row.score+'</td></tr>';
                 });
             }).catch(function(e) {
-                alert('Could not fetch cloud data, showing empty table.');
+                if(localRecords.length === 0) {
+                    body.innerHTML = '<tr><td colspan="5" style="text-align:center;">No records found yet.</td></tr>';
+                    return;
+                }
+                localRecords.forEach(function(row) {
+                    body.innerHTML += '<tr><td>'+row.name+'</td><td>'+row.role+'</td><td>'+(row.pwdStrength || row.pwd)+'</td><td>'+(row.spamData || row.spam)+'</td><td>'+row.score+'</td></tr>';
+                });
             });
         } else if (pass !== null) {
             alert("Invalid access credentials!");
