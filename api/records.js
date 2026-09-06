@@ -1,6 +1,10 @@
 const { MongoClient } = require('mongodb');
 
-const uri = "mongodb+srv://walhabibi1007_db_user:LNOyYvEWuSn4DhGh@cluster0.i228vm0.mongodb.net/CyberHygieneDB?retryWrites=true&w=majority&appName=Cluster0";
+// ⚠️ नीचे दिए गए कोट्स के अंदर अपना मोंगोडीबी से कॉपी किया हुआ लिंक पेस्ट करें।
+// ध्यान रखें: लिंक में <db_username> को हटाकर sanjayanayadav7760_db_user लिखें
+// और <db_password> को हटाकर Sanjana07 लिखें।
+const uri = "mongodb+srv://sanjanayadav7760_db_user:Sanjana07@cluster0.oqpvk7.mongodb.net/?appName=Cluster0";
+
 let client;
 let clientPromise;
 
