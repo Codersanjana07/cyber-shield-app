@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Hygiene Assessment Platform</title>
+    <style>
+        :root { --primary: #2c3e50; --accent: #3498db; --success: #2ecc71; --danger: #e74c3c; --bg: #ecf0f1; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 650px; position: relative; }
+        .admin-corner { position: absolute; top: 15px; right: 15px; }
+        .btn { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.3s; margin-top: 15px; }
+        .btn:hover { background: #2980b9; }
+        .btn-submit { background: var(--success); }
+        .btn-submit:hover { background: #27ae60; }
+        .page { display: none; }
+        .page.active { display: block; }
+        h2 { color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 15px; }
+        .strength-badge { display: inline-block; padding: 6px 12px; border-radius: 4px; margin-top: 10px; font-weight: bold; display: none; }
+        .quiz-q { background: #fdfdfd; padding: 15px; border-radius: 6px; border-left: 4px solid var(--accent); margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .quiz-option { display: block; background: #f8f9fa; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; transition: 0.2s; }
+        .quiz-option:hover { background: #eef2f7; }
+        .quiz-option input { width: auto; margin-right: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: var(--primary); color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="admin-corner"><button class="btn" style="background:#7f8c8d; font-size:12px; padding:6px 12px;" onclick="showAdminLogin()">Admin Login</button></div>
+
+    <div id="page1" class="page active">
+        <h2>Cyber Hygiene Practices Assessment</h2>
+        <p>This application evaluates cyber safety habits among college students and faculty.</p>
+        <div class="form-group">
+            <label for="role">Choose Your Role:</label>
+            <select id="role">
+                <option value="">-- Select Role --</option>
+                <option value="Student">Student</option>
+                <option value="Faculty">Faculty</option>
+            </select>
+        </div>
+        <div class="form-group" id="nameContainer">
+            <label for="userName">Enter Full Name:</label>
+            <input type="text" id="userName" placeholder="Your Name">
+        </div>
+        <button class="btn" onclick="goToPage(2)">Next Step</button>
+    </div>
+
+    <div id="page2" class="page">
+        <h2>🔒 Step 1: Password Strength Evaluator</h2>
+        <div class="form-group">
+            <label>Test a password to check its vulnerability:</label>
+            <input type="password" id="pwdInput" oninput="checkPasswordStrength()" placeholder="Type a password...">
+            <div id="strengthResult" class="strength-badge"></div>
+        </div>
+        <button class="btn" onclick="goToPage(3)">Next Step</button>
+    </div>
+
+    <div id="page3" class="page">
+        <h2>📞 Step 2: Spam Call & Message Analyzer</h2>
+        <div class="form-group">
+            <label>Paste a suspicious message or phone number:</label>
+            <input type="text" id="spamInput" placeholder="e.g., Free lottery, Win cash, urgent OTP, unknown 5 digit number">
+        </div>
+        <button class="btn" onclick="checkSpam()">Analyze for Spam</button>
+        <p id="spamResult" style="font-weight: bold; margin-top: 15px;"></p>
+        <button class="btn" onclick="goToPage(4)">Next Step</button>
+    </div>
+
+    <div id="page4" class="page" style="max-height: 70vh; overflow-y: auto; padding-right: 10px;">
+        <h2>📝 Step 3: Cyber Hygiene Awareness Quiz (15 MCQs)</h2>
+        <div id="quizContainer"></div>
+        <button class="btn btn-submit" onclick="submitData()">Submit Assessment</button>
+    </div>
+
+    <div id="page5" class="page">
+        <h2 style="color: var(--success);">🎉 Thank You!</h2>
+        <p id="thankYouMessage"></p>
+        <button class="btn" onclick="resetForm()">Fill Assessment Again</button>
+    </div>
+
+    <div id="adminPage" class="page">
+        <h2>📊 Admin Control Dashboard (All Permanent Records)</h2>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Password Safety</th>
+                        <th>Spam Test Input</th>
+                        <th>Quiz Result</th>
+                    </tr>
+                </thead>
+                <tbody id="recordsTableBody"></tbody>
+            </table>
+        </div>
+        <button class="btn" onclick="goToPage(1)" style="background:#7f8c8d;">Back to Main Screen</button>
+    </div>
+</div>
+
+<script>
+    let userData = { name: '', role: '', pwdStrength: 'Not Checked', spamData: 'None', score: '' };
+    const ADMIN_PASS = "admin123"; 
+
+    const questions = [
+        { q: "What is the most secure method for managing multiple accounts?", o: ["Using the same password", "Writing passwords in a diary", "Using a dedicated Password Manager"], a: 2 },
+        { q: "What does 'Two-Factor Authentication (2FA)' do?", o: ["Requires two email IDs", "Adds an extra layer of security beyond password", "Saves password twice"], a: 1 },
+        { q: "If you receive an urgent email from your bank asking for your PIN, what is it likely?", o: ["Phishing Scam", "Official update", "System glitch"], a: 0 },
+        { q: "Is it safe to conduct online banking on a public railway/cafe Wi-Fi?", o: ["Yes, if it is fast", "No, public Wi-Fi is unencrypted and risky", "Yes, public Wi-Fi is always secure"], a: 1 },
+        { q: "How often should you ideally update your computer's operating system?", o: ["Never", "Only when it crashes", "Regularly when updates are released"], a: 2 },
+        { q: "What is a 'Strong Password' composed of?", o: ["Your birthdate and name", "Mix of uppercase, lowercase, numbers, and symbols", "12345678@abc"], a: 1 },
+        { q: "What should you do before discarding an old smartphone?", o: ["Just delete photos", "Perform a full factory reset and data wipe", "Throw it away directly"], a: 1 },
+        { q: "What does HTTPS (with a padlock icon) in a browser URL signify?", o: ["The website is 100% free of viruses", "Data encryption between browser and server", "The website belongs to the government"], a: 1 },
+        { q: "What is ransomware?", o: ["A software that speeds up PC", "Malware that encrypts your files and demands money", "An antivirus tool"], a: 1 },
+        { q: "If a friend sends an unusual link via Instagram out of nowhere, you should:", o: ["Click it immediately", "Block them instantly", "Verify with them via another platform before clicking"], a: 2 },
+        { q: "Why is it important to back up your college data/assignments?", o: ["To free up hard disk space", "To prevent total data loss from malware or hardware failure", "It is a college rule"], a: 1 },
+        { q: "What is a firewall used for?", o: ["To protect against physical fire", "To monitor and filter incoming/outgoing network traffic", "To delete old duplicate files"], a: 1 },
+        { q: "Which of the following is a symptom of malware infection?", o: ["PC operating normally", "Sudden slow performance and excessive pop-up ads", "High internet speed"], a: 1 },
+        { q: "What should you check to verify if an email sender is genuine?", o: ["The profile picture", "The actual domain extension of the sender's email address", "The font style of the text"], a: 1 },
+        { q: "What is social engineering?", o: ["Manipulating people into giving up confidential information", "A degree course in college", "Building social media profiles"], a: 0 }
+    ];
+
+    function goToPage(pNum) {
+        if(pNum === 2) {
+            const role = document.getElementById('role').value;
+            const name = document.getElementById('userName').value.trim();
+            if(!role || !name) { alert('Please select your role and enter your name!'); return; }
+            userData.role = role; userData.name = name;
+        }
+        if(pNum === 4 && document.getElementById('quizContainer').children.length === 0) {
+            loadQuiz();
+        }
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(`page${pNum === 'admin' ? 'adminPage' : pNum}`).classList.add('active');
+    }
+
+    function checkPasswordStrength() {
+        const val = document.getElementById('pwdInput').value;
+        const b = document.getElementById('strengthResult'); b.style.display = 'inline-block';
+        if(val.length < 6) { b.textContent = 'Weak 🔴'; b.style.backgroundColor = '#e74c3c'; b.style.color='white'; userData.pwdStrength = 'Weak'; }
