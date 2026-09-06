@@ -33,61 +33,62 @@
 <body>
 
 <div class="container">
-    <div class="admin-corner"><button class="btn" style="background:#7f8c8d; font-size:12px; padding:6px 12px;" onclick="showAdminLogin()">Admin Login</button></div>
+    <div class="admin-corner">
+        <button class="btn" style="background:#7f8c8d; font-size:12px; padding:6px 12px;" onclick="window.showAdminPage()">Admin Login</button>
+    </div>
 
-    <div id="page1" class="page active">
+    <div id="p1" class="page active">
         <h2>Cyber Hygiene Practices Assessment</h2>
         <p>This application evaluates cyber safety habits among college students and faculty.</p>
         <div class="form-group">
-            <label for="role">Choose Your Role:</label>
-            <select id="role">
-                <option value="">-- Select Role --</option>
+            <label>Choose Your Role:</label>
+            <select id="userRole">
                 <option value="Student">Student</option>
                 <option value="Faculty">Faculty</option>
             </select>
         </div>
-        <div class="form-group" id="nameContainer">
-            <label for="userName">Enter Full Name:</label>
-            <input type="text" id="userName" placeholder="Your Name">
+        <div class="form-group">
+            <label>Enter Full Name:</label>
+            <input type="text" id="uName" placeholder="Your Name">
         </div>
-        <button class="btn" onclick="goToPage(2)">Next Step</button>
+        <button class="btn" onclick="window.navTo(2)">Next Step</button>
     </div>
 
-    <div id="page2" class="page">
+    <div id="p2" class="page">
         <h2>🔒 Step 1: Password Strength Evaluator</h2>
         <div class="form-group">
             <label>Test a password to check its vulnerability:</label>
-            <input type="password" id="pwdInput" oninput="checkPasswordStrength()" placeholder="Type a password...">
-            <div id="strengthResult" class="strength-badge"></div>
+            <input type="password" id="pInput" oninput="window.calcPwd()" placeholder="Type a password...">
+            <div id="pRes" class="strength-badge"></div>
         </div>
-        <button class="btn" onclick="goToPage(3)">Next Step</button>
+        <button class="btn" onclick="window.navTo(3)">Next Step</button>
     </div>
 
-    <div id="page3" class="page">
+    <div id="p3" class="page">
         <h2>📞 Step 2: Spam Call & Message Analyzer</h2>
         <div class="form-group">
             <label>Paste a suspicious message or phone number:</label>
-            <input type="text" id="spamInput" placeholder="e.g., Free lottery, Win cash, urgent OTP, unknown 5 digit number">
+            <input type="text" id="sInput" placeholder="e.g., Free lottery, Win cash, urgent OTP">
         </div>
-        <button class="btn" onclick="checkSpam()">Analyze for Spam</button>
-        <p id="spamResult" style="font-weight: bold; margin-top: 15px;"></p>
-        <button class="btn" onclick="goToPage(4)">Next Step</button>
+        <button class="btn" onclick="window.calcSpam()">Analyze for Spam</button>
+        <p id="sRes" style="font-weight: bold; margin-top: 15px;"></p>
+        <button class="btn" onclick="window.navTo(4)">Next Step</button>
     </div>
 
-    <div id="page4" class="page" style="max-height: 70vh; overflow-y: auto; padding-right: 10px;">
+    <div id="p4" class="page" style="max-height: 70vh; overflow-y: auto;">
         <h2>📝 Step 3: Cyber Hygiene Awareness Quiz (15 MCQs)</h2>
-        <div id="quizContainer"></div>
-        <button class="btn btn-submit" onclick="submitData()">Submit Assessment</button>
+        <div id="qBox"></div>
+        <button class="btn btn-submit" onclick="window.finalSubmit()">Submit Assessment</button>
     </div>
 
-    <div id="page5" class="page">
+    <div id="p5" class="page">
         <h2 style="color: var(--success);">🎉 Thank You!</h2>
-        <p id="thankYouMessage"></p>
-        <button class="btn" onclick="resetForm()">Fill Assessment Again</button>
+        <p id="tMsg"></p>
+        <button class="btn" onclick="window.location.reload()">Fill Assessment Again</button>
     </div>
 
-    <div id="adminPage" class="page">
-        <h2>📊 Admin Control Dashboard (All Permanent Records)</h2>
+    <div id="pAdmin" class="page">
+        <h2>📊 Admin Control Dashboard</h2>
         <div style="overflow-x:auto;">
             <table>
                 <thead>
@@ -95,22 +96,20 @@
                         <th>Name</th>
                         <th>Role</th>
                         <th>Password Safety</th>
-                        <th>Spam Test Input</th>
-                        <th>Quiz Result</th>
+                        <th>Spam Test</th>
+                        <th>Quiz Score</th>
                     </tr>
                 </thead>
-                <tbody id="recordsTableBody"></tbody>
+                <tbody id="tBody"></tbody>
             </table>
         </div>
-        <button class="btn" onclick="goToPage(1)" style="background:#7f8c8d;">Back to Main Screen</button>
+        <button class="btn" onclick="window.location.reload()" style="background:#7f8c8d;">Back to Main Screen</button>
     </div>
 </div>
-
 <script>
-    let userData = { name: '', role: '', pwdStrength: 'Not Checked', spamData: 'None', score: '' };
-    const ADMIN_PASS = "admin123"; 
-
-    const questions = [
+    var globalData = { name: '', role: '', pwdStrength: 'Not Checked', spamData: 'None', score: '' };
+    var ADMIN_PASS = "admin123";
+    var quizItems = [
         { q: "What is the most secure method for managing multiple accounts?", o: ["Using the same password", "Writing passwords in a diary", "Using a dedicated Password Manager"], a: 2 },
         { q: "What does 'Two-Factor Authentication (2FA)' do?", o: ["Requires two email IDs", "Adds an extra layer of security beyond password", "Saves password twice"], a: 1 },
         { q: "If you receive an urgent email from your bank asking for your PIN, what is it likely?", o: ["Phishing Scam", "Official update", "System glitch"], a: 0 },
@@ -128,21 +127,94 @@
         { q: "What is social engineering?", o: ["Manipulating people into giving up confidential information", "A degree course in college", "Building social media profiles"], a: 0 }
     ];
 
-    function goToPage(pNum) {
-        if(pNum === 2) {
-            const role = document.getElementById('role').value;
-            const name = document.getElementById('userName').value.trim();
-            if(!role || !name) { alert('Please select your role and enter your name!'); return; }
-            userData.role = role; userData.name = name;
+    window.navTo = function(num) {
+        if (num === 2) {
+            var n = document.getElementById('uName').value.trim();
+            var r = document.getElementById('userRole').value;
+            if (!n) { alert('Please enter your name!'); return; }
+            globalData.name = n; globalData.role = r;
         }
-        if(pNum === 4 && document.getElementById('quizContainer').children.length === 0) {
-            loadQuiz();
+        if (num === 4) {
+            var container = document.getElementById('qBox');
+            container.innerHTML = '';
+            quizItems.forEach(function(item, i) {
+                var opts = '';
+                item.o.forEach(function(o, oi) {
+                    opts += '<label class="quiz-option"><input type="radio" name="rawq' + i + '" value="' + oi + '"> ' + o + '</label>';
+                });
+                container.innerHTML += '<div class="quiz-q"><p><strong>' + (i+1) + '. ' + item.q + '</strong></p>' + opts + '</div>';
+            });
         }
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById(`page${pNum === 'admin' ? 'adminPage' : pNum}`).classList.add('active');
-    }
+        document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+        document.getElementById('p' + num).classList.add('active');
+    };
 
-    function checkPasswordStrength() {
-        const val = document.getElementById('pwdInput').value;
-        const b = document.getElementById('strengthResult'); b.style.display = 'inline-block';
-        if(val.length < 6) { b.textContent = 'Weak 🔴'; b.style.backgroundColor = '#e74c3c'; b.style.color='white'; userData.pwdStrength = 'Weak'; }
+    window.calcPwd = function() {
+        var v = document.getElementById('pInput').value;
+        var element = document.getElementById('pRes');
+        element.style.display = 'inline-block';
+        if (v.length < 6) {
+            element.textContent = 'Weak 🔴'; element.style.backgroundColor = '#e74c3c'; element.style.color='white'; globalData.pwdStrength = 'Weak';
+        } else if (v.match(/[A-Z]/) && v.match(/[0-9]/)) {
+            element.textContent = 'Strong 🟢'; element.style.backgroundColor = '#2ecc71'; element.style.color='white'; globalData.pwdStrength = 'Strong';
+        } else {
+            element.textContent = 'Medium 🟡'; element.style.backgroundColor = '#f1c40f'; element.style.color='black'; globalData.pwdStrength = 'Medium';
+        }
+    };
+
+    window.calcSpam = function() {
+        var txt = document.getElementById('sInput').value.toLowerCase();
+        var element = document.getElementById('sRes');
+        if (!txt) { alert('Please enter a message!'); return; }
+        globalData.spamData = txt;
+        if (txt.includes('win') || txt.includes('free') || txt.includes('lottery') || txt.includes('otp')) {
+            element.textContent = "🚨 Result: Detected as SPAM / Risk!"; element.style.color = 'var(--danger)';
+        } else {
+            element.textContent = "✅ Result: Looks SAFE to proceed."; element.style.color = 'var(--success)';
+        }
+    };
+
+    window.finalSubmit = function() {
+        var finalScore = 0;
+        quizItems.forEach(function(item, i) {
+            var select = document.querySelector('input[name="rawq' + i + '"]:checked');
+            if (select && parseInt(select.value) === item.a) { finalScore++; }
+        });
+        globalData.score = finalScore + " / 15";
+
+        fetch('/api/records', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(globalData)
+        }).then(function(res) {
+            document.getElementById('tMsg').innerHTML = 'Thank you, <strong>' + globalData.name + '</strong>!<br>Data saved to permanent cloud server.<br><strong>Score:</strong> ' + globalData.score;
+            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+            document.getElementById('p5').classList.add('active');
+        }).catch(function(err) {
+            document.getElementById('tMsg').innerHTML = 'Thank you, <strong>' + globalData.name + '</strong>!<br><strong>Score:</strong> ' + globalData.score;
+            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+            document.getElementById('p5').classList.add('active');
+        });
+    };
+
+    window.showAdminPage = function() {
+        var pass = prompt("Enter Admin Security Code:");
+        if (pass === ADMIN_PASS) {
+            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+            document.getElementById('pAdmin').classList.add('active');
+            fetch('/api/records').then(function(r) { return r.json(); }).then(function(records) {
+                var body = document.getElementById('tBody');
+                body.innerHTML = '';
+                records.forEach(function(row) {
+                    body.innerHTML += '<tr><td>'+row.name+'</td><td>'+row.role+'</td><td>'+row.pwdStrength+'</td><td>'+row.spamData+'</td><td>'+row.score+'</td></tr>';
+                });
+            }).catch(function(e) {
+                alert('Could not fetch cloud data, showing empty table.');
+            });
+        } else if (pass !== null) {
+            alert("Invalid access credentials!");
+        }
+    };
+</script>
+</body>
+</html>
