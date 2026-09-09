@@ -1,11 +1,14 @@
 const { MongoClient } = require('mongodb');
 
-// आपके मोंगोडीबी क्लाउड क्लस्टर का बिल्कुल सही और परमानेंट लाइव लिंक (%40 के साथ)
-const uri = "mongodb+srv://sanjanayadav7760_db_user:Sanjana07%40cluster0.oqpvk7.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+// Vercel Environment Variable se secure link connect karne ke liye
+const uri = process.env.MONGODB_URI; 
 let client;
 let clientPromise;
 
 if (!global._mongoClientPromise) {
+  if (!uri) {
+    throw new Error("Please add your MONGODB_URI to Environment Variables");
+  }
   client = new MongoClient(uri);
   global._mongoClientPromise = client.connect();
 }
