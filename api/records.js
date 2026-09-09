@@ -1,7 +1,7 @@
 const { MongoClient } = require('mongodb');
 
-// यह आपके नए सिंगल ईमेल मोंगोडीबी अकाउंट का बिल्कुल सही और परमानेंट लाइव लिंक है
-const uri = "mongodb+srv://sanjanayadav7760_db_user:Sanjana07@cluster0.oqpvk7.mongodb.net/CyberHygieneDB?retryWrites=true&w=majority&appName=Cluster0";
+
+const uri = "mongodb+srv://sanjanayadav7760_db_user:Sanjana07@cluster0.oqpvk7.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 let client;
 let clientPromise;
 
